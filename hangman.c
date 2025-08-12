@@ -3,7 +3,7 @@
 #include <stdlib.h>
 #include <signal.h>
 #include <unistd.h>
-
+#include "linked_list.c"
 void clear(){
 	printf("\033[2J");
 	printf("\033[H");
@@ -85,9 +85,9 @@ bool checkLetter(char Letter, char anwser[]){
 	} 
 	return false;
 }
-void printGuessed(char answer[],char guessed[], int sizeOfAnswer, int sizeOfGuessed){
+void printcorrectGuesses(char answer[],char correctGuesses[], int sizeOfAnswer, int sizeOfGuessed){
 	for (int i = 0; i < sizeOfAnswer; i++){
-		if (charInArray(guessed,answer[i],sizeOfGuessed)){
+		if (charInArray(correctGuesses,answer[i],sizeOfGuessed)){
 			printf("%c ", answer[i]);
 
 		}
@@ -116,19 +116,31 @@ int main(void){
 	int numOfCorrectGuesses = 0;
 	int numOfWrongGuesses = 0;
 	char anwser[] = "password";
+	LinkedList guesses;
+	bool firstGuess = true;
 	//this number must be the same as numOfLettesrs.
-	char guessed[7] = "";
-	int numOfTries = 3;
+	char correctGuesses[7] = "";
+	const int MAX_TRIES = 3;
+	int numOfTries = MAX_TRIES;
 	char guess;
 	while (numOfTries > 0) {
 		clear();
 		printHangmanArt(numOfWrongGuesses);
-		printGuessed(anwser,guessed, answerLength, numOfLetters);
+		printcorrectGuesses(anwser,correctGuesses, answerLength, numOfLetters);
+		printf("\n\nYour Guesses: ");
+		printList(&guesses);	
 		printf("\nEnter Your Guess\n");
 		scanf(" %c", &guess);
 		flushStdin();
-		if (charInArray(anwser,guess,answerLength) && !charInArray(guessed,guess,numOfLetters)){
-			guessed[numOfCorrectGuesses] = guess;
+		bool alreadyGuessed = isCharInList(&guesses, guess);
+		if (firstGuess){
+			firstGuess = false;
+			guesses.data = guess;
+		}else if (!alreadyGuessed){
+			addToList(&guesses, guess);
+		}
+		if (charInArray(anwser,guess,answerLength) && !charInArray(correctGuesses,guess,numOfLetters)){
+			correctGuesses[numOfCorrectGuesses] = guess;
 			numOfCorrectGuesses++;
 			if (numOfCorrectGuesses >= numOfLetters){
 				printf("\033[?1049l");
@@ -136,7 +148,7 @@ int main(void){
 				return 1;
 			}
 		}
-		else if (!charInArray(anwser,guess,answerLength)){
+		else if (!charInArray(anwser,guess,answerLength) && !alreadyGuessed){
 
 		numOfTries--;
 		numOfWrongGuesses++;
